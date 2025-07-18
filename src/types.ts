@@ -806,3 +806,266 @@ export interface ListAccountUsersArgs {
   order?: 'asc' | 'desc';
   include?: string[];
 }
+
+// ===== TEACHER INFORMATION RETRIEVAL TOOL TYPES =====
+
+// Tier 1: Essential Daily Tools
+export interface GetTeacherCoursesArgs {
+  enrollment_state?: 'active' | 'completed' | 'all';
+  include_student_count?: boolean;
+  include_needs_grading?: boolean;
+  include_recent_activity?: boolean;
+  term_id?: number;
+}
+
+export interface GetGradingQueueArgs {
+  course_id?: number;
+  include_quiz_submissions?: boolean;
+  limit?: number;
+}
+
+export interface GetCourseStudentsArgs {
+  course_id: number;
+  include_grades?: boolean;
+  include_activity?: boolean;
+  include_avatar?: boolean;
+  enrollment_state?: 'active' | 'invited' | 'completed' | 'inactive' | 'all';
+  sort_by?: 'name' | 'score' | 'last_login';
+}
+
+export interface GetCourseAssignmentsArgs {
+  course_id: number;
+  include_submissions?: boolean;
+  include_rubric?: boolean;
+  include_overrides?: boolean;
+  assignment_group_id?: number;
+  due_date_filter?: 'past_due' | 'upcoming' | 'no_due_date' | 'all';
+  search_term?: string;
+}
+
+export interface GetUpcomingEventsArgs {
+  course_id?: number;
+  days_ahead?: number;
+  include_assignments?: boolean;
+  include_calendar_events?: boolean;
+  include_quiz_due_dates?: boolean;
+}
+
+// Tier 2: Analytics & Insights Tools
+export interface GetStudentPerformanceArgs {
+  course_id: number;
+  sort_by?: 'name' | 'score' | 'participation' | 'last_login';
+  include_missing_assignments?: boolean;
+  include_late_submissions?: boolean;
+}
+
+export interface GetCourseAnalyticsArgs {
+  course_id: number;
+  include_assignment_analytics?: boolean;
+  include_participation_data?: boolean;
+  include_grade_distribution?: boolean;
+}
+
+export interface GetAssignmentAnalyticsArgs {
+  course_id: number;
+  assignment_id?: number;
+  include_score_distribution?: boolean;
+  include_submission_timing?: boolean;
+}
+
+export interface GetMissingSubmissionsArgs {
+  course_id?: number;
+  student_id?: number;
+  include_late_submissions?: boolean;
+  assignment_group_id?: number;
+  days_overdue?: number;
+}
+
+export interface GetCourseStatisticsArgs {
+  course_id: number;
+  include_grade_distribution?: boolean;
+  include_participation_stats?: boolean;
+  include_submission_stats?: boolean;
+  include_engagement_metrics?: boolean;
+}
+
+// Tier 3: Advanced Information Tools
+export interface GetStudentDetailsArgs {
+  course_id: number;
+  student_id: number;
+  include_progress?: boolean;
+  include_analytics?: boolean;
+  include_submissions?: boolean;
+}
+
+export interface GetStudentActivityArgs {
+  course_id: number;
+  student_id?: number;
+  include_page_views?: boolean;
+  include_participation?: boolean;
+}
+
+export interface GetCourseDetailsArgs {
+  course_id: number;
+  include_sections?: boolean;
+  include_teachers?: boolean;
+  include_enrollment_counts?: boolean;
+  include_syllabus?: boolean;
+  include_assignments_summary?: boolean;
+}
+
+export interface GetCourseDiscussionsArgs {
+  course_id: number;
+  include_unread_count?: boolean;
+  include_recent_posts?: boolean;
+  only_announcements?: boolean;
+  search_term?: string;
+}
+
+export interface GetTeacherActivityArgs {
+  course_id?: number;
+  activity_types?: ('Submission' | 'DiscussionTopic' | 'Conversation' | 'Announcement')[];
+  limit?: number;
+}
+
+export interface GetGradebookDataArgs {
+  course_id: number;
+  include_unposted_grades?: boolean;
+  include_custom_columns?: boolean;
+  student_ids?: number[];
+  assignment_group_id?: number;
+}
+
+export interface GetModuleProgressArgs {
+  course_id: number;
+  student_id?: number;
+  module_id?: number;
+  include_items?: boolean;
+  include_completion_dates?: boolean;
+}
+
+export interface SearchCourseContentArgs {
+  course_id: number;
+  search_term: string;
+  content_types?: ('assignment' | 'discussion_topic' | 'wiki_page' | 'quiz' | 'file')[];
+  include_body?: boolean;
+}
+
+export interface GetUserEnrollmentsArgs {
+  user_id?: number;
+  course_id?: number;
+  enrollment_type?: 'StudentEnrollment' | 'TeacherEnrollment' | 'TaEnrollment' | 'ObserverEnrollment';
+  enrollment_state?: 'active' | 'invited' | 'completed' | 'inactive';
+  include_grades?: boolean;
+}
+
+// Response types for analytics and insights
+export interface StudentPerformanceSummary {
+  user: CanvasUser;
+  enrollment: CanvasEnrollment;
+  current_score: number | null;
+  final_score: number | null;
+  current_grade: string | null;
+  final_grade: string | null;
+  missing_assignments: number;
+  late_submissions: number;
+  last_activity: string | null;
+  participation_score: number | null;
+}
+
+export interface CourseAnalyticsSummary {
+  course: CanvasCourse;
+  total_students: number;
+  active_students: number;
+  average_score: number | null;
+  grade_distribution: GradeDistribution;
+  participation_rate: number;
+  assignment_completion_rate: number;
+  recent_activity_count: number;
+}
+
+export interface GradeDistribution {
+  a_range: number; // 90-100%
+  b_range: number; // 80-89%
+  c_range: number; // 70-79%
+  d_range: number; // 60-69%
+  f_range: number; // 0-59%
+  no_grade: number;
+}
+
+export interface AssignmentAnalyticsSummary {
+  assignment: CanvasAssignment;
+  submission_count: number;
+  graded_count: number;
+  average_score: number | null;
+  median_score: number | null;
+  score_distribution: number[];
+  on_time_submissions: number;
+  late_submissions: number;
+  missing_submissions: number;
+}
+
+export interface MissingSubmissionItem {
+  assignment: CanvasAssignment;
+  student: CanvasUser;
+  days_overdue: number;
+  points_possible: number;
+}
+
+export interface UpcomingEventItem {
+  id: number;
+  title: string;
+  due_date: string;
+  event_type: 'assignment' | 'quiz' | 'calendar_event';
+  course_id: number;
+  course_name: string;
+  points_possible?: number;
+  html_url: string;
+}
+
+export interface GradingQueueItem {
+  id: number;
+  title: string;
+  course_id: number;
+  course_name: string;
+  assignment_id?: number;
+  quiz_id?: number;
+  needs_grading_count: number;
+  due_date: string | null;
+  html_url: string;
+  type: 'assignment' | 'quiz' | 'discussion';
+}
+
+export interface StudentActivitySummary {
+  user: CanvasUser;
+  last_login: string | null;
+  total_page_views: number;
+  recent_page_views: number; // last 7 days
+  participation_count: number;
+  discussion_posts: number;
+  assignment_submissions: number;
+  quiz_submissions: number;
+}
+
+export interface CourseContentSearchResult {
+  id: number;
+  title: string;
+  content_type: 'assignment' | 'discussion_topic' | 'wiki_page' | 'quiz' | 'file';
+  course_id: number;
+  html_url: string;
+  body_excerpt?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ModuleProgressSummary {
+  module: CanvasModule;
+  student_progress: {
+    user: CanvasUser;
+    state: CanvasModuleState;
+    completed_at: string | null;
+    current_position: number;
+    items_completed: number;
+    items_total: number;
+  }[];
+}

@@ -2,15 +2,15 @@
 
 // src/index.ts
 
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { Server } from "@modelcontextprotocol/sdk/server/index";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio";
 import {
   CallToolRequestSchema,
   ListResourcesRequestSchema,
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
   Tool
-} from "@modelcontextprotocol/sdk/types.js";
+} from "@modelcontextprotocol/sdk/types";
 import { CanvasClient } from "./client.js";
 import * as dotenv from "dotenv";
 import {
@@ -28,7 +28,27 @@ import {
   CreateUserArgs,
   ListAccountCoursesArgs,
   ListAccountUsersArgs,
-  CreateReportArgs
+  CreateReportArgs,
+  // Teacher Information Retrieval Types
+  GetTeacherCoursesArgs,
+  GetGradingQueueArgs,
+  GetCourseStudentsArgs,
+  GetCourseAssignmentsArgs,
+  GetUpcomingEventsArgs,
+  GetStudentPerformanceArgs,
+  GetCourseAnalyticsArgs,
+  GetAssignmentAnalyticsArgs,
+  GetMissingSubmissionsArgs,
+  GetCourseStatisticsArgs,
+  GetStudentDetailsArgs,
+  GetStudentActivityArgs,
+  GetCourseDetailsArgs,
+  GetCourseDiscussionsArgs,
+  GetTeacherActivityArgs,
+  GetGradebookDataArgs,
+  GetModuleProgressArgs,
+  SearchCourseContentArgs,
+  GetUserEnrollmentsArgs
 } from "./types.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -817,6 +837,656 @@ const TOOLS: Tool[] = [
       },
       required: ["account_id", "report"]
     }
+  },
+
+  // ===== TEACHER INFORMATION RETRIEVAL TOOLS =====
+  // Tier 1: Essential Daily Tools
+
+  {
+    name: "canvas_get_teacher_courses",
+    description: "Get all courses where the current user is a teacher, with enrollment and activity data",
+    inputSchema: {
+      type: "object",
+      properties: {
+        enrollment_state: {
+          type: "string",
+          enum: ["active", "completed", "all"],
+          description: "Filter by enrollment state",
+          default: "active"
+        },
+        include_student_count: {
+          type: "boolean",
+          description: "Include total student count",
+          default: true
+        },
+        include_needs_grading: {
+          type: "boolean",
+          description: "Include assignments needing grading count",
+          default: true
+        },
+        include_recent_activity: {
+          type: "boolean",
+          description: "Include recent course activity",
+          default: false
+        },
+        term_id: {
+          type: "number",
+          description: "Filter by specific term (optional)"
+        }
+      },
+      required: []
+    }
+  },
+
+  {
+    name: "canvas_get_grading_queue",
+    description: "Get assignments and submissions that need grading across all courses or specific course",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "Specific course ID (optional - if not provided, gets all courses)"
+        },
+        include_quiz_submissions: {
+          type: "boolean",
+          description: "Include quiz submissions needing grading",
+          default: true
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of items to return",
+          default: 50,
+          minimum: 1,
+          maximum: 100
+        }
+      },
+      required: []
+    }
+  },
+
+  {
+    name: "canvas_get_course_students",
+    description: "Get detailed information about all students enrolled in a course",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "ID of the course"
+        },
+        include_grades: {
+          type: "boolean",
+          description: "Include current grades and scores",
+          default: true
+        },
+        include_activity: {
+          type: "boolean",
+          description: "Include last login and activity data",
+          default: true
+        },
+        include_avatar: {
+          type: "boolean",
+          description: "Include student avatar URLs",
+          default: false
+        },
+        enrollment_state: {
+          type: "string",
+          enum: ["active", "invited", "completed", "inactive", "all"],
+          description: "Filter by enrollment state",
+          default: "active"
+        },
+        sort_by: {
+          type: "string",
+          enum: ["name", "score", "last_login"],
+          description: "Sort students by specified criteria",
+          default: "name"
+        }
+      },
+      required: ["course_id"]
+    }
+  },
+
+  {
+    name: "canvas_get_course_assignments",
+    description: "Get all assignments for a course with submission and grading information",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "ID of the course"
+        },
+        include_submissions: {
+          type: "boolean",
+          description: "Include submission counts and statistics",
+          default: true
+        },
+        include_rubric: {
+          type: "boolean",
+          description: "Include rubric information",
+          default: false
+        },
+        include_overrides: {
+          type: "boolean",
+          description: "Include assignment overrides",
+          default: false
+        },
+        assignment_group_id: {
+          type: "number",
+          description: "Filter by assignment group (optional)"
+        },
+        due_date_filter: {
+          type: "string",
+          enum: ["past_due", "upcoming", "no_due_date", "all"],
+          description: "Filter by due date status",
+          default: "all"
+        },
+        search_term: {
+          type: "string",
+          description: "Search assignments by name (optional)"
+        }
+      },
+      required: ["course_id"]
+    }
+  },
+
+  {
+    name: "canvas_get_upcoming_events",
+    description: "Get upcoming assignments, due dates, and calendar events",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "Specific course ID (optional - if not provided, gets all courses)"
+        },
+        days_ahead: {
+          type: "number",
+          description: "Number of days to look ahead",
+          default: 7,
+          minimum: 1,
+          maximum: 30
+        },
+        include_assignments: {
+          type: "boolean",
+          description: "Include assignment due dates",
+          default: true
+        },
+        include_calendar_events: {
+          type: "boolean",
+          description: "Include calendar events",
+          default: true
+        },
+        include_quiz_due_dates: {
+          type: "boolean",
+          description: "Include quiz due dates",
+          default: true
+        }
+      },
+      required: []
+    }
+  },
+
+  // Tier 2: Analytics & Insights Tools
+
+  {
+    name: "canvas_get_student_performance",
+    description: "Get performance summaries for all students in a course",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "ID of the course"
+        },
+        sort_by: {
+          type: "string",
+          enum: ["name", "score", "participation", "last_login"],
+          description: "Sort students by specified criteria",
+          default: "name"
+        },
+        include_missing_assignments: {
+          type: "boolean",
+          description: "Include missing assignment data",
+          default: true
+        },
+        include_late_submissions: {
+          type: "boolean",
+          description: "Include late submission data",
+          default: true
+        }
+      },
+      required: ["course_id"]
+    }
+  },
+
+  {
+    name: "canvas_get_course_analytics",
+    description: "Get comprehensive analytics for course participation and performance",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "ID of the course"
+        },
+        include_assignment_analytics: {
+          type: "boolean",
+          description: "Include assignment performance data",
+          default: true
+        },
+        include_participation_data: {
+          type: "boolean",
+          description: "Include student participation metrics",
+          default: true
+        },
+        include_grade_distribution: {
+          type: "boolean",
+          description: "Include grade distribution statistics",
+          default: true
+        }
+      },
+      required: ["course_id"]
+    }
+  },
+
+  {
+    name: "canvas_get_assignment_analytics",
+    description: "Get detailed analytics for assignment performance and submission patterns",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "ID of the course"
+        },
+        assignment_id: {
+          type: "number",
+          description: "Specific assignment ID (optional - if not provided, gets all assignments)"
+        },
+        include_score_distribution: {
+          type: "boolean",
+          description: "Include score distribution data",
+          default: true
+        },
+        include_submission_timing: {
+          type: "boolean",
+          description: "Include submission timing analysis",
+          default: true
+        }
+      },
+      required: ["course_id"]
+    }
+  },
+
+  {
+    name: "canvas_get_missing_submissions",
+    description: "Get students with missing or late submissions across courses",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "Specific course ID (optional - if not provided, gets all courses)"
+        },
+        student_id: {
+          type: "number",
+          description: "Specific student ID (optional)"
+        },
+        include_late_submissions: {
+          type: "boolean",
+          description: "Include late submissions",
+          default: true
+        },
+        assignment_group_id: {
+          type: "number",
+          description: "Filter by assignment group (optional)"
+        },
+        days_overdue: {
+          type: "number",
+          description: "Filter by days overdue (optional)"
+        }
+      },
+      required: []
+    }
+  },
+
+  {
+    name: "canvas_get_course_statistics",
+    description: "Get comprehensive statistics and metrics for a course",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "ID of the course"
+        },
+        include_grade_distribution: {
+          type: "boolean",
+          description: "Include grade distribution stats",
+          default: true
+        },
+        include_participation_stats: {
+          type: "boolean",
+          description: "Include participation statistics",
+          default: true
+        },
+        include_submission_stats: {
+          type: "boolean",
+          description: "Include submission statistics",
+          default: true
+        },
+        include_engagement_metrics: {
+          type: "boolean",
+          description: "Include engagement metrics",
+          default: false
+        }
+      },
+      required: ["course_id"]
+    }
+  },
+
+  // Tier 3: Advanced Information Tools
+
+  {
+    name: "canvas_get_student_details",
+    description: "Get comprehensive information about a specific student including grades, activity, and progress",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "ID of the course"
+        },
+        student_id: {
+          type: "number",
+          description: "ID of the student"
+        },
+        include_progress: {
+          type: "boolean",
+          description: "Include module progress",
+          default: true
+        },
+        include_analytics: {
+          type: "boolean",
+          description: "Include activity analytics",
+          default: true
+        },
+        include_submissions: {
+          type: "boolean",
+          description: "Include recent submissions",
+          default: true
+        }
+      },
+      required: ["course_id", "student_id"]
+    }
+  },
+
+  {
+    name: "canvas_get_student_activity",
+    description: "Get student engagement and activity data for a course",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "ID of the course"
+        },
+        student_id: {
+          type: "number",
+          description: "Specific student ID (optional - if not provided, gets all students)"
+        },
+        include_page_views: {
+          type: "boolean",
+          description: "Include page view data",
+          default: true
+        },
+        include_participation: {
+          type: "boolean",
+          description: "Include participation metrics",
+          default: true
+        }
+      },
+      required: ["course_id"]
+    }
+  },
+
+  {
+    name: "canvas_get_course_details",
+    description: "Get comprehensive information about a specific course",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "ID of the course"
+        },
+        include_sections: {
+          type: "boolean",
+          description: "Include course sections",
+          default: true
+        },
+        include_teachers: {
+          type: "boolean",
+          description: "Include teacher information",
+          default: true
+        },
+        include_enrollment_counts: {
+          type: "boolean",
+          description: "Include enrollment statistics",
+          default: true
+        },
+        include_syllabus: {
+          type: "boolean",
+          description: "Include syllabus content",
+          default: false
+        },
+        include_assignments_summary: {
+          type: "boolean",
+          description: "Include assignments overview",
+          default: true
+        }
+      },
+      required: ["course_id"]
+    }
+  },
+
+  {
+    name: "canvas_get_course_discussions",
+    description: "Get discussion topics and activity for a course",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "ID of the course"
+        },
+        include_unread_count: {
+          type: "boolean",
+          description: "Include unread post counts",
+          default: true
+        },
+        include_recent_posts: {
+          type: "boolean",
+          description: "Include recent discussion posts",
+          default: true
+        },
+        only_announcements: {
+          type: "boolean",
+          description: "Only return announcements",
+          default: false
+        },
+        search_term: {
+          type: "string",
+          description: "Search discussions by term (optional)"
+        }
+      },
+      required: ["course_id"]
+    }
+  },
+
+  {
+    name: "canvas_get_teacher_activity",
+    description: "Get recent activity stream for teacher including submissions, messages, and course updates",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "Filter by specific course (optional)"
+        },
+        activity_types: {
+          type: "array",
+          items: {
+            type: "string",
+            enum: ["Submission", "DiscussionTopic", "Conversation", "Announcement"]
+          },
+          description: "Filter by activity types (optional)"
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of activities to return",
+          default: 20,
+          minimum: 1,
+          maximum: 100
+        }
+      },
+      required: []
+    }
+  },
+
+  {
+    name: "canvas_get_gradebook_data",
+    description: "Get comprehensive gradebook information for a course",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "ID of the course"
+        },
+        include_unposted_grades: {
+          type: "boolean",
+          description: "Include unposted grades",
+          default: false
+        },
+        include_custom_columns: {
+          type: "boolean",
+          description: "Include custom gradebook columns",
+          default: false
+        },
+        student_ids: {
+          type: "array",
+          items: { type: "number" },
+          description: "Specific student IDs (optional)"
+        },
+        assignment_group_id: {
+          type: "number",
+          description: "Filter by assignment group (optional)"
+        }
+      },
+      required: ["course_id"]
+    }
+  },
+
+  {
+    name: "canvas_get_module_progress",
+    description: "Get module completion progress for students in a course",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "ID of the course"
+        },
+        student_id: {
+          type: "number",
+          description: "Specific student ID (optional)"
+        },
+        module_id: {
+          type: "number",
+          description: "Specific module ID (optional)"
+        },
+        include_items: {
+          type: "boolean",
+          description: "Include individual module items",
+          default: true
+        },
+        include_completion_dates: {
+          type: "boolean",
+          description: "Include completion timestamps",
+          default: true
+        }
+      },
+      required: ["course_id"]
+    }
+  },
+
+  {
+    name: "canvas_search_course_content",
+    description: "Search across course content including assignments, discussions, pages, and files",
+    inputSchema: {
+      type: "object",
+      properties: {
+        course_id: {
+          type: "number",
+          description: "ID of the course"
+        },
+        search_term: {
+          type: "string",
+          description: "Search term"
+        },
+        content_types: {
+          type: "array",
+          items: {
+            type: "string",
+            enum: ["assignment", "discussion_topic", "wiki_page", "quiz", "file"]
+          },
+          description: "Types of content to search (optional)"
+        },
+        include_body: {
+          type: "boolean",
+          description: "Include content body in search",
+          default: false
+        }
+      },
+      required: ["course_id", "search_term"]
+    }
+  },
+
+  {
+    name: "canvas_get_user_enrollments",
+    description: "Get detailed enrollment information for users across courses",
+    inputSchema: {
+      type: "object",
+      properties: {
+        user_id: {
+          type: "number",
+          description: "Specific user ID (optional)"
+        },
+        course_id: {
+          type: "number",
+          description: "Specific course ID (optional)"
+        },
+        enrollment_type: {
+          type: "string",
+          enum: ["StudentEnrollment", "TeacherEnrollment", "TaEnrollment", "ObserverEnrollment"],
+          description: "Filter by enrollment type (optional)"
+        },
+        enrollment_state: {
+          type: "string",
+          enum: ["active", "invited", "completed", "inactive"],
+          description: "Filter by enrollment state (optional)"
+        },
+        include_grades: {
+          type: "boolean",
+          description: "Include grade information",
+          default: true
+        }
+      },
+      required: []
+    }
   }
 ];
 
@@ -854,7 +1524,7 @@ class CanvasMCPServer {
   }
 
   private setupErrorHandling(): void {
-    this.server.onerror = (error) => {
+    this.server.onerror = (error: Error) => {
       console.error(`[${this.config.name} Error]`, error);
     };
 
@@ -976,7 +1646,7 @@ class CanvasMCPServer {
     });
 
     // Read resource content
-    this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    this.server.setRequestHandler(ReadResourceRequestSchema, async (request: any) => {
       const uri = request.params.uri;
       const [type, id] = uri.split("://");
       
@@ -1073,7 +1743,7 @@ class CanvasMCPServer {
     }));
 
     // Handle tool calls with comprehensive error handling
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
       try {
         const args = request.params.arguments || {};
         const toolName = request.params.name;
@@ -1447,7 +2117,205 @@ class CanvasMCPServer {
               content: [{ type: "text", text: JSON.stringify(report, null, 2) }]
             };
           }
-          
+
+          // ===== TEACHER INFORMATION RETRIEVAL TOOLS =====
+          // Tier 1: Essential Daily Tools
+
+          case "canvas_get_teacher_courses": {
+            const teacherCoursesArgs = args as unknown as GetTeacherCoursesArgs;
+            const courses = await this.client.getTeacherCourses(teacherCoursesArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(courses, null, 2) }]
+            };
+          }
+
+          case "canvas_get_grading_queue": {
+            const gradingQueueArgs = args as unknown as GetGradingQueueArgs;
+            const gradingItems = await this.client.getGradingQueue(gradingQueueArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(gradingItems, null, 2) }]
+            };
+          }
+
+          case "canvas_get_course_students": {
+            const courseStudentsArgs = args as unknown as GetCourseStudentsArgs;
+            if (!courseStudentsArgs.course_id) {
+              throw new Error("Missing required field: course_id");
+            }
+            const students = await this.client.getCourseStudents(courseStudentsArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(students, null, 2) }]
+            };
+          }
+
+          case "canvas_get_course_assignments": {
+            const courseAssignmentsArgs = args as unknown as GetCourseAssignmentsArgs;
+            if (!courseAssignmentsArgs.course_id) {
+              throw new Error("Missing required field: course_id");
+            }
+            const assignments = await this.client.getCourseAssignments(courseAssignmentsArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(assignments, null, 2) }]
+            };
+          }
+
+          case "canvas_get_upcoming_events": {
+            const upcomingEventsArgs = args as unknown as GetUpcomingEventsArgs;
+            const events = await this.client.getUpcomingEvents(upcomingEventsArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(events, null, 2) }]
+            };
+          }
+
+          // Tier 2: Analytics & Insights Tools
+
+          case "canvas_get_student_performance": {
+            const studentPerformanceArgs = args as unknown as GetStudentPerformanceArgs;
+            if (!studentPerformanceArgs.course_id) {
+              throw new Error("Missing required field: course_id");
+            }
+            const performance = await this.client.getStudentPerformance(studentPerformanceArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(performance, null, 2) }]
+            };
+          }
+
+          case "canvas_get_course_analytics": {
+            const courseAnalyticsArgs = args as unknown as GetCourseAnalyticsArgs;
+            if (!courseAnalyticsArgs.course_id) {
+              throw new Error("Missing required field: course_id");
+            }
+            const analytics = await this.client.getCourseAnalytics(courseAnalyticsArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(analytics, null, 2) }]
+            };
+          }
+
+          case "canvas_get_assignment_analytics": {
+            const assignmentAnalyticsArgs = args as unknown as GetAssignmentAnalyticsArgs;
+            if (!assignmentAnalyticsArgs.course_id) {
+              throw new Error("Missing required field: course_id");
+            }
+            const analytics = await this.client.getAssignmentAnalytics(assignmentAnalyticsArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(analytics, null, 2) }]
+            };
+          }
+
+          case "canvas_get_missing_submissions": {
+            const missingSubmissionsArgs = args as unknown as GetMissingSubmissionsArgs;
+            const missingSubmissions = await this.client.getMissingSubmissions(missingSubmissionsArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(missingSubmissions, null, 2) }]
+            };
+          }
+
+          case "canvas_get_course_statistics": {
+            const courseStatsArgs = args as unknown as GetCourseStatisticsArgs;
+            if (!courseStatsArgs.course_id) {
+              throw new Error("Missing required field: course_id");
+            }
+            const statistics = await this.client.getCourseStatistics(courseStatsArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(statistics, null, 2) }]
+            };
+          }
+
+          // Tier 3: Advanced Information Tools
+
+          case "canvas_get_student_details": {
+            const studentDetailsArgs = args as unknown as GetStudentDetailsArgs;
+            if (!studentDetailsArgs.course_id || !studentDetailsArgs.student_id) {
+              throw new Error("Missing required fields: course_id and student_id");
+            }
+            const details = await this.client.getStudentDetails(studentDetailsArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(details, null, 2) }]
+            };
+          }
+
+          case "canvas_get_student_activity": {
+            const studentActivityArgs = args as unknown as GetStudentActivityArgs;
+            if (!studentActivityArgs.course_id) {
+              throw new Error("Missing required field: course_id");
+            }
+            const activity = await this.client.getStudentActivity(studentActivityArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(activity, null, 2) }]
+            };
+          }
+
+          case "canvas_get_course_details": {
+            const courseDetailsArgs = args as unknown as GetCourseDetailsArgs;
+            if (!courseDetailsArgs.course_id) {
+              throw new Error("Missing required field: course_id");
+            }
+            const details = await this.client.getCourseDetails(courseDetailsArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(details, null, 2) }]
+            };
+          }
+
+          case "canvas_get_course_discussions": {
+            const courseDiscussionsArgs = args as unknown as GetCourseDiscussionsArgs;
+            if (!courseDiscussionsArgs.course_id) {
+              throw new Error("Missing required field: course_id");
+            }
+            const discussions = await this.client.getCourseDiscussions(courseDiscussionsArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(discussions, null, 2) }]
+            };
+          }
+
+          case "canvas_get_teacher_activity": {
+            const teacherActivityArgs = args as unknown as GetTeacherActivityArgs;
+            const activity = await this.client.getTeacherActivity(teacherActivityArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(activity, null, 2) }]
+            };
+          }
+
+          case "canvas_get_gradebook_data": {
+            const gradebookArgs = args as unknown as GetGradebookDataArgs;
+            if (!gradebookArgs.course_id) {
+              throw new Error("Missing required field: course_id");
+            }
+            const gradebook = await this.client.getGradebookData(gradebookArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(gradebook, null, 2) }]
+            };
+          }
+
+          case "canvas_get_module_progress": {
+            const moduleProgressArgs = args as unknown as GetModuleProgressArgs;
+            if (!moduleProgressArgs.course_id) {
+              throw new Error("Missing required field: course_id");
+            }
+            const progress = await this.client.getModuleProgress(moduleProgressArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(progress, null, 2) }]
+            };
+          }
+
+          case "canvas_search_course_content": {
+            const searchArgs = args as unknown as SearchCourseContentArgs;
+            if (!searchArgs.course_id || !searchArgs.search_term) {
+              throw new Error("Missing required fields: course_id and search_term");
+            }
+            const results = await this.client.searchCourseContent(searchArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(results, null, 2) }]
+            };
+          }
+
+          case "canvas_get_user_enrollments": {
+            const enrollmentsArgs = args as unknown as GetUserEnrollmentsArgs;
+            const enrollments = await this.client.getUserEnrollments(enrollmentsArgs);
+            return {
+              content: [{ type: "text", text: JSON.stringify(enrollments, null, 2) }]
+            };
+          }
+
           default:
             throw new Error(`Unknown tool: ${toolName}`);
         }
